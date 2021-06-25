@@ -23,7 +23,6 @@ globals [
   experiment?               ; a boolean for whether a timed-experiment is being run or not
   beta-gal-activity-values  ; a list to keep track of beta-gal activity in multiple trials
   trial-number              ; a variable to show which trial is going on
-  trial-duration
 ]
 
 breed [ LacIs LacI ]  ; LacI repressor protein (violet proteins)
@@ -75,9 +74,9 @@ to set-global-variables
   set inhibited? false
   set ONPG-degradation-count 0
   set total-transcripts 0
+  set total-proteins 0
   set ONPG-quantity 200
   set operon-transcribed? false
-  set trial-duration 600
 end
 
 to set-DNA-patches   ; a procedure to set the DNA patches in the cell and assign appropriate colors based on their strengths
@@ -157,6 +156,7 @@ to go
   dissociate-complex
   recolor-patches
   update-ONPG
+  display
   tick
 end
 
@@ -383,23 +383,14 @@ to run-experiment
   set experiment? True
 end
 
-to run-multiple-trials
-  repeat number-of-trials [
-    set trial-number trial-number + 1
-    reset-experiment
-    repeat trial-duration [go]
-  set beta-gal-activity-values (lput ONPG-degradation-count beta-gal-activity-values)
-  ]
-end
-
 
 ; Copyright 2016 Uri Wilensky.
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-360
+655
 10
-806
+1101
 240
 -1
 -1
@@ -478,10 +469,10 @@ rbs-strength
 0
 
 SLIDER
-10
-430
-210
-463
+8
+388
+208
+421
 LacI-bond-leakage
 LacI-bond-leakage
 0
@@ -493,10 +484,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-475
-210
-508
+8
+433
+208
+466
 LacI-ONPG-binding-chance
 LacI-ONPG-binding-chance
 0
@@ -508,10 +499,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-215
-430
-450
-463
+213
+388
+448
+421
 ONPG-degradation-chance
 ONPG-degradation-chance
 0
@@ -524,12 +515,12 @@ HORIZONTAL
 
 PLOT
 10
-195
+142
 355
-425
+372
 beta-galactosidase activity
-NIL
-NIL
+Time
+b-gal activity
 0.0
 10.0
 0.0
@@ -541,19 +532,19 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot ONPG-degradation-count"
 
 TEXTBOX
-430
-250
-1025
-316
+725
+251
+1320
+317
 Promoter                      Operator                               RBS\n\nlacZ Gene                     Terminator
 14
 0.0
 1
 
 TEXTBOX
-360
+655
 190
-490
+785
 332
 -
 100
@@ -561,9 +552,9 @@ TEXTBOX
 1
 
 TEXTBOX
-515
+810
 190
-625
+920
 332
 -
 100
@@ -571,9 +562,9 @@ TEXTBOX
 1
 
 TEXTBOX
-690
+985
 190
-830
+1125
 334
 -
 100
@@ -581,9 +572,9 @@ TEXTBOX
 1
 
 TEXTBOX
-360
+655
 225
-490
+785
 315
 -
 100
@@ -591,9 +582,9 @@ TEXTBOX
 1
 
 TEXTBOX
-515
+810
 225
-610
+905
 367
 -
 100
@@ -601,10 +592,10 @@ TEXTBOX
 1
 
 SLIDER
-215
-475
-450
-508
+213
+433
+448
+466
 LacI-ONPG-separation-chance
 LacI-ONPG-separation-chance
 0
@@ -616,33 +607,11 @@ NIL
 HORIZONTAL
 
 MONITOR
-190
-145
-355
-190
-Translation Rate (Scaled)
-number-of-proteins-per-tick
-17
-1
-11
-
-MONITOR
-10
-145
-185
-190
-Transcription Rate (Scaled)
-number-of-transcripts-per-tick
-17
-1
-11
-
-MONITOR
-225
-340
+226
+292
+338
 337
-385
-beta-gal activity
+b-gal activity
 ONPG-degradation-count
 17
 1
@@ -653,17 +622,17 @@ SWITCH
 60
 355
 93
-ONPG?
-ONPG?
+onpg?
+onpg?
 0
 1
 -1000
 
 SLIDER
-455
-430
-650
-463
+453
+388
+648
+421
 LacZ-degradation-chance
 LacZ-degradation-chance
 0
@@ -692,12 +661,62 @@ NIL
 0
 
 BUTTON
-860
-60
-1002
-116
+388
+149
+579
+212
 Run multiple trials
-set beta-gal-activity-values []\nset trial-number 0\nrun-multiple-trials
+go (if ticks = trial-duration [reset-experiment set trial-number trial-number + 1])(if trial-number = number-of-trials [stop])
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
+SLIDER
+388
+64
+578
+97
+number-of-trials
+number-of-trials
+0
+500
+50.0
+1
+1
+NIL
+HORIZONTAL
+
+PLOT
+655
+305
+1100
+483
+b-gal activity across trials
+Trial number
+b-gal activity
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -16777216 true "" "if ticks = trial-duration [plotxy trial-number ONPG-degradation-count]"
+
+BUTTON
+389
+108
+578
+141
+setup multiple trials
+setup set trial-number 0
 NIL
 1
 T
@@ -709,48 +728,40 @@ NIL
 1
 
 SLIDER
-833
-15
-1005
-48
-number-of-trials
-number-of-trials
+388
+13
+577
+46
+trial-duration
+trial-duration
 0
-500
-50.0
+1200
+600.0
+60
 1
-1
-NIL
+seconds
 HORIZONTAL
 
 MONITOR
-885
-175
-977
-220
-Trial Number
+385
+326
+583
+371
+trial number
 trial-number
 17
 1
 11
 
-PLOT
-360
-305
-805
-425
-b-gal activity across trials
-NIL
-NIL
+TEXTBOX
+387
+229
+582
+331
+Running multiple trials take time! Be patient!\nYou can track the progress of your experiment using the 'trial number' monitor below. 
+12
 0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 1 -16777216 true "" "if ticks = trial-duration [plotxy trial-number ONPG-degradation-count]"
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1178,50 +1189,8 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
 NetLogo 6.2.0
 @#$#@#$#@
-need-to-manually-make-preview-for-this-model
 @#$#@#$#@
 @#$#@#$#@
-<experiments>
-  <experiment name="Sample-Experiment" repetitions="5" runMetricsEveryStep="false">
-    <setup>setup</setup>
-    <go>go</go>
-    <timeLimit steps="2500"/>
-    <metric>ONPG-degradation-count</metric>
-    <enumeratedValueSet variable="ONPG-degradation-chance">
-      <value value="0.95"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="const-ONPG?">
-      <value value="true"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="timed-expt?">
-      <value value="false"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="promoter-strength">
-      <value value="&quot;reference&quot;"/>
-      <value value="&quot;strong&quot;"/>
-      <value value="&quot;medium&quot;"/>
-      <value value="&quot;weak&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="complex-separation-chance">
-      <value value="1.0E-4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="complex-formation-chance">
-      <value value="0.95"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="lacI-bond-leakage">
-      <value value="0.05"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="lacZ-degradation-chance">
-      <value value="0.003"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="rbs-strength">
-      <value value="&quot;reference&quot;"/>
-      <value value="&quot;strong&quot;"/>
-      <value value="&quot;medium&quot;"/>
-      <value value="&quot;weak&quot;"/>
-    </enumeratedValueSet>
-  </experiment>
-</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
@@ -1235,5 +1204,5 @@ true
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
 @#$#@#$#@
-1
+0
 @#$#@#$#@
